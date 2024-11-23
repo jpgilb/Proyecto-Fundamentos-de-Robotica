@@ -13,9 +13,9 @@ if __name__ == '__main__':
  marker = FrameMarker()
  
  # Joint names
- jnames = ['joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'joint_6']
+ jnames = ['joint_1', 'joint_2', 'joint_3', 'prismatic_joint', 'joint_4', 'joint_5', 'joint_6']
  # Joint Configuration
- q = np.array([1.59, 0.39, -0.64, -1.68, 0.27, -1.79])
+ q = np.array([-0.5, 0.17263, 0.45621, 0.0724683, 0.16253712, 1.3274623, -0.61651])
 
  # End effector with respect to the base
  T = fkine(q)

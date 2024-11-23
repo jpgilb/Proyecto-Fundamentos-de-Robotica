@@ -18,15 +18,15 @@ if __name__ == '__main__':
  bmarker_desired = FrameMarker(0.5)
  
  # Joint names
- jnames = ['joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'joint_6']
+ jnames = ['joint_1', 'joint_2', 'joint_3', 'prismatic_joint', 'joint_4', 'joint_5', 'joint_6']
  
  # Desired pose
- Rd = np.array([[1,0,0],[0,1,0],[0,0,1]])
+ Rd = np.array([[1,0,0],[0,0,-1],[0,1,0]])
  qd = Quaternion(matrix=Rd)
  # Find an xd that the robot can reach
- xd = np.array([0.4, 0.2, 0.3, qd.w, qd.x, qd.y, qd.z])
+ xd = np.array([-0.2, 0.07, 1, qd.w, qd.x, qd.y, qd.z])
  # Initial configuration
- q0 = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+ q0 = np.array([0, 0, 0, 0.0, 0.0, 0.0, 0.0])
  
  # Resulting initial pose (end effector with respect to the base link)
  T = fkine(q0)
@@ -45,7 +45,7 @@ if __name__ == '__main__':
  jstate.position = q0
  
  # Frequency (in Hz) and control period 
- freq = 100
+ freq = 50
  dt = 1.0/freq
  rate = rospy.Rate(freq)
  
@@ -56,9 +56,15 @@ if __name__ == '__main__':
  # Initialize the derror vector (derivative of the error)
  derror = np.zeros(7)
  # Constante cinemática
- k = 10
+ k = 5
  # Contador y tiempo y epsilon
  cont = 0; t = 0; epsilon = 1e-1
+
+ min_dq = np.array([-0.4, -0.4, -0.4, -0.5, -0.59, -0.59, -0.59])
+ max_dq = np.array([0.4, 0.4, 0.4, 0.5, 0.59, 0.59, 0.59])
+
+ min_q = np.array([-3.12, -1.73, -1.73, 0, -3.12, -1.81, -3.12])
+ max_q = np.array([3.12, 1.73, 1.73, 0.1, 3.12, 1.81, 3.12])
 
  # Main loop
  #for i in range(1):
@@ -75,7 +81,7 @@ if __name__ == '__main__':
 
   # Error actual
   err_pose = PoseError(Pose_act, xd)
-  print('error: ', np.round(np.linalg.norm(err_pose), 2))
+  #print('error: ', np.round(np.linalg.norm(err_pose), 2))
 
  # Verificación de límite de error
   if np.linalg.norm(err_pose) < epsilon:
@@ -93,8 +99,11 @@ if __name__ == '__main__':
   except Exception as ex:
    dq = dpinv(J) @ derror
 
+  dq = np.clip(dq, min_dq, max_dq)
+
   # Integrar configuración
   q = q + dt * dq
+  q = np.clip(q, min_q, max_q)
   x = TF2xyzquat(fkine(q))  # Actualizar pose actual
   t += dt
 
@@ -102,6 +111,9 @@ if __name__ == '__main__':
   cont += 1
 
   # Publish the message
+  print('q: ', np.round(q, 2))
+  print('dq: ', np.round(dq, 2))
+  print('\n')
   jstate.position = q
   pub.publish(jstate)
   bmarker_desired.setPose(xd)

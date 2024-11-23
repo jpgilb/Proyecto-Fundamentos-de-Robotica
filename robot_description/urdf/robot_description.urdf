@@ -80,7 +80,7 @@
   
   <joint
     name="joint_1"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.0 0.0 0.13343"
       rpy="1.571 0.0 -3.1416" />
@@ -90,6 +90,7 @@
       link="link_1" />
     <axis
       xyz="0 1 0" />
+    <limit lower="-3.12" upper="3.12" effort="2.75" velocity="0.4" />
   </joint>
 
   <link
@@ -135,7 +136,7 @@
   
   <joint
     name="joint_2"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0.18967 0"
       rpy="0.94237 -0.4634 -0.11653" />
@@ -145,6 +146,7 @@
       link="link_2" />
     <axis
       xyz="-0.88847 0.2908 0.35504" />
+    <limit lower="-1.73" upper="1.73" effort="2.75" velocity="0.4" />
   </joint>
 
   <link
@@ -190,7 +192,7 @@
 
   <joint
     name="joint_3"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.024558 0.12737 -0.16578"
       rpy="0.97336 -0.36296 2.8253" />
@@ -200,16 +202,14 @@
       link="link_3" />
     <axis
       xyz="1 0 0" />
+    <limit lower="-1.73" upper="1.73" effort="2.75" velocity="0.4" />
   </joint>
 
   <link name="cylinder_link">
     <inertial>
-        <!-- Centro de masa del cilindro (mitad de la altura en Z) -->
-        <origin xyz="0 0 0.125" rpy="0 0 0" />
-        <!-- Masa del cilindro (ajusta según tus necesidades) -->
-        <mass value="1.0" />
-        <!-- Tensor de inercia calculado para un cilindro -->
-        <inertia 
+      <origin xyz="0.0 0 0.125" rpy="0 0 0" />
+      <mass value="1.0" />
+      <inertia 
         ixx="0.0104166667" 
         ixy="0" 
         ixz="0" 
@@ -219,39 +219,38 @@
     </inertial>
 
     <visual>
-        <!-- Geometría del cilindro -->
-        <origin xyz="0 0 0" rpy="1.57 0 0" />
-        <geometry>
-        <cylinder radius="0.03" length="0.25" />
-        </geometry>
-        <material name="blue">
-        <color rgba="0.0 0.0 1.0 1.0" />
-        </material>
+      <origin xyz="0.01 0 0" rpy="1.57 0 0" />
+      <geometry>
+         <cylinder radius="0.033" length="0.25" />
+      </geometry>
+      <material name="darker_greyish_blue">
+         <color rgba="0.6 0.6 0.75 1" />
+      </material>
     </visual>
 
     <collision>
-        <!-- Colisión del cilindro -->
-        <origin xyz="0 0 0" rpy="1.57 0 0" />
-        <geometry>
-        <cylinder radius="0.03" length="0.25" />
-        </geometry>
+      <origin xyz="0.01 0 0" rpy="1.57 0 0" />
+      <geometry>
+         <cylinder radius="0.033" length="0.25" />
+      </geometry>
     </collision>
   </link>
 
   <joint name="prismatic_joint" type="prismatic">
-    <!-- Posición y orientación de la articulación respecto al eslabón padre -->
-    <origin xyz="0 0 0.0" rpy="0 0 0" />
+    <!-- Ajuste de posición inicial -->
+    <origin xyz="0.0 -0.2 0" rpy="0 0 0" />
     
-    <!-- Eslabón padre y eslabón hijo -->
+    <!-- Conexiones -->
     <parent link="link_3" />
     <child link="cylinder_link" />
     
-    <!-- Eje de movimiento de la articulación -->
+    <!-- Eje de movimiento -->
     <axis xyz="0 -1 0" />
 
-    <!-- Propiedades dinámicas de la articulación -->
-    <limit lower="0.0" upper="0.5" effort="50" velocity="1.0" />
+    <!-- Límites ajustados -->
+    <limit lower="0.0" upper="0.1" effort="5" velocity="0.5" />
   </joint>
+
 
   <link
     name="link_4">
@@ -296,9 +295,9 @@
   
   <joint
     name="joint_4"
-    type="continuous">
+    type="revolute">
     <origin
-      xyz="0.0088 -0.1588 0"
+      xyz="0 -0.121 0"
       rpy="-1.5708 0 0" />
     <parent
       link="cylinder_link" />
@@ -306,6 +305,7 @@
       link="link_4" />
     <axis
       xyz="0 0 -1" />
+    <limit lower="-3.12" upper="3.12" effort="2.75" velocity="0.59" />
   </joint>
 
   <link
@@ -351,7 +351,7 @@
 
   <joint
     name="joint_5"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -0.1053"
       rpy="3.14159 0 3.14159" />
@@ -361,6 +361,7 @@
       link="link_5" />
     <axis
       xyz="-1 0 0" />
+    <limit lower="-1.81" upper="1.81" effort="2.75" velocity="0.59" />
   </joint>
 
   <link
@@ -406,7 +407,7 @@
 
   <joint
     name="joint_6"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.0039 0 0.1636"
       rpy="-1.5708 0 0" />
@@ -416,6 +417,7 @@
       link="link_6" />
     <axis
       xyz="0 -1 0" />
+    <limit lower="-3.12" upper="3.12" effort="2.75" velocity="0.59" />
   </joint>
 
 </robot>

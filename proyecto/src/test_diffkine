@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+
+import rospy
+from sensor_msgs.msg import JointState
+
+from markers import *
+from prfuncs import *
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+if __name__ == '__main__':
+
+ # Initialize the node
+ rospy.init_node("testKinematicControlPosition")
+ print('starting motion ... ')
+ # Publisher: publish to the joint_states topic
+ pub = rospy.Publisher('joint_states', JointState, queue_size=10)
+
+ # Markers for the current and desired positions
+ bmarker_current  = BallMarker(color['RED'])
+ bmarker_desired = BallMarker(color['GREEN'])
+
+ # Joint names
+ jnames = ['joint_1', 'joint_2', 'joint_3', 'prismatic_joint', 'joint_4', 'joint_5', 'joint_6']
+ 
+ # Desired position
+ xd = np.array([-0.45, -0.20, 0.6])
+ # Initial configuration
+ q0 = np.array([0.0, -1.0, 1.7, 0, -1.6, 0.0, 0.0])
+
+ # Resulting initial position (end effector with respect to the base link)
+ T = fkine(q0)
+ x0 = T[0:3,3]
+
+ # Red marker shows the achieved position
+ bmarker_current.xyz(x0)
+ # Green marker shows the desired position
+ bmarker_desired.xyz(xd)
+
+ # Instance of the JointState message
+ jstate = JointState()
+ # Values of the message
+ jstate.header.stamp = rospy.Time.now()
+ jstate.name = jnames
+ # Add the head joint value (with value 0) to the joints
+ jstate.position = q0
+
+ # Frequency (in Hz) and control period 
+ freq = 50
+ dt = 1.0/freq
+ rate = rospy.Rate(freq)
+
+ # Error admisible
+ epsilon = 1e-3
+ # Constante cinemática
+ k = 10
+
+ # Initial joint configuration
+ q = copy(q0)
+
+ # Listas para almacenar variables para gráficas
+ ee = []; xx = []; qq = []; tt = []; t = 0
+
+ # Contador
+ cont = 0
+ # Main loop
+ while not rospy.is_shutdown():
+  # Current time (needed for ROS)
+  jstate.header.stamp = rospy.Time.now()
+
+  # Kinematic control law for position (complete here)
+  # -----------------------------
+  
+  # Jacobiano actual
+  J = jacobian(q)
+  # Posición actual de la cinemática directa
+  T_act = fkine(q)
+  x = T_act[0:3, 3]
+  # Error actual
+  e = x - xd
+
+  # Almacenamiento de valores
+  ee.append([e[0],e[1],e[2]])
+  xx.append([x[0],x[1],x[2]])
+  tt.append(t)
+  qq.append([q[0],q[1],q[2],q[3],q[4],q[5]])
+
+  # Verificación de límite de error
+  if (np.linalg.norm(e) < epsilon):
+   print("Se llegó al punto deseado en {:.4} segundos".format(cont*dt))
+   print("Posición alcanzada: ", np.round(x,3))
+   break
+
+  # Ley de control
+  de = -k*e
+  # Cinemática diferencial inversa
+  dq = np.linalg.pinv(J) @ de
+  # Integración de q
+  q = q + dt*dq
+  # Tiempo nuevo
+  t = t + dt
+
+  # Incrementar contador
+  cont=+1
+  # -----------------------------
+
+        
+  # Log values                                                      
+  #fxcurrent.write(str(x[0])+' '+str(x[1]) +' '+str(x[2])+'\n')
+  #fxdesired.write(str(xd[0])+' '+str(xd[1])+' '+str(xd[2])+'\n')
+  #fq.write(str(q[0])+" "+str(q[1])+" "+str(q[2])+" "+str(q[3])+" "+
+           #str(q[4])+" "+str(q[5])+"\n")
+        
+  # Publish the message
+  jstate.position = q
+  pub.publish(jstate)
+  bmarker_desired.xyz(xd)
+  bmarker_current.xyz(x)
+  # Wait for the next iteration
+  rate.sleep()
+
+ print('ending motion ...')
+
+ x = np.array(xx)
+ # Gráfica 3D
+ fig1 = plt.figure()
+ ax1 = fig1.add_subplot(111, projection='3d')
+
+ ax1.scatter(xd[0], xd[1], xd[2], color='green', label='Posición deseada', marker='o')
+ ax1.scatter(x[:, 0], x[:, 1], x[:, 2], color='red', label='Posición alcanzada', marker='o')
+
+ ax1.set_xlim([-1, 1])
+ ax1.set_ylim([-1, 1])
+ ax1.set_zlim([0, 1]) 
+
+ ax1.set_xlabel('X')
+ ax1.set_ylabel('Y')
+ ax1.set_zlabel('Z')
+ ax1.legend()
+
+ # Gráfica 2D
+ fig2 = plt.figure()
+
+ plt.subplot(1,3,1)
+ # Posición actual
+ plt.plot(np.array(tt), x[:, 0])
+ # Posición deseada
+ plt.plot(np.array(tt), xd[0]*np.ones(x.shape[0]))
+ plt.xlabel('Tiempo (s)'); plt.ylabel('Posición X (m)'); plt.grid()
+ plt.legend(['x(t)', '$x_{des}$'])
+
+ plt.subplot(1,3,2)
+ # Posición actual
+ plt.plot(np.array(tt), x[:, 1])
+ # Posición deseada
+ plt.plot(np.array(tt), xd[1]*np.ones(x.shape[0]))
+ plt.xlabel('Tiempo (s)'); plt.ylabel('Posición Y (m)'); plt.grid()
+ plt.legend(['y(t)', '$y_{des}$'])
+
+ plt.subplot(1,3,3)
+ # Posición actual
+ plt.plot(np.array(tt), x[:, 2])
+ # Posición deseada
+ plt.plot(np.array(tt), xd[2]*np.ones(x.shape[0]))
+ plt.xlabel('Tiempo (s)'); plt.ylabel('Posición Z (m)'); plt.grid()
+ plt.legend(['z(t)', '$z_{des}$'])
+
+ plt.show()
+
+ #fxcurrent.close()
+ #fxdesired.close()
+ #fq.close()

@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+
+import rospy
+from sensor_msgs.msg import JointState
+from markers import *
+from prfuncs import *
+from roslib import packages
+import matplotlib.pyplot as plt
+
+
+import rbdl
+
+if __name__ == '__main__':
+
+  rospy.init_node("control_pdg")
+  pub = rospy.Publisher('joint_states', JointState, queue_size=1000)
+  bmarker_actual  = BallMarker(color['RED'])
+  bmarker_deseado = BallMarker(color['GREEN'])
+
+  # Nombres de las articulaciones
+  jnames = ['joint_1', 'joint_2', 'joint_3',
+          'prismatic_joint', 'joint_4', 'joint_5', 'joint_6']
+  # Objeto (mensaje) de tipo JointState
+  jstate = JointState()
+  # Valores del mensaje
+  jstate.header.stamp = rospy.Time.now()
+  jstate.name = jnames
+  
+  # =============================================================
+  # Configuracion articular inicial (en radianes)
+  q = np.array([0.0, -1.0, 1.5, 0.0, -1.6, 1.0, 0.0,])
+  # Velocidad inicial
+  dq = np.array([0., 0., 0., 0., 0., 0., 0.])
+  # Configuracion articular deseada
+  qdes = np.array([1.0, -1.0, 1.0, 0.1, -1.5, 1.0, 1.0])
+  # =============================================================
+  
+  # Posicion resultante de la configuracion articular deseada
+  xdes = fkine(qdes)[0:3,3]
+  # Copiar la configuracion articular en el mensaje a ser publicado
+  jstate.position = q
+  pub.publish(jstate)
+  
+  # Modelo RBDL
+  modelo = rbdl.loadModel('/home/user/proy_ws/src/robot_description/urdf/robot_description.urdf')
+  ndof   = modelo.q_size     # Grados de libertad
+  
+  zeros = np.zeros(ndof)
+  g = np.zeros(ndof)
+  
+  # Frecuencia del envio (en Hz)
+  freq = 20
+  dt = 1.0/freq
+  rate = rospy.Rate(freq)
+  
+  # Simulador dinamico del robot
+  robot = Robot(q, dq, ndof, dt)
+
+  # Se definen las ganancias del controlador
+  Kp = 0.1
+  Kd = 0.1
+
+  Kp = Kp*np.eye(ndof)
+  Kd = Kd*np.eye(ndof)
+
+  # arrays para gráficas
+  tt = []
+  xx = []
+  
+  # Bucle de ejecucion continua
+  t = 0.0
+  epsilon = 1e-2
+  print('INICIO DE BUCLE')
+  while not rospy.is_shutdown():
+
+    #if (t > 40):
+     #print('Límite de tiempo alcanzado')
+     #break
+  
+    # Leer valores del simulador
+    q  = robot.read_joint_positions()
+    dq = robot.read_joint_velocities()
+    # Posicion actual del efector final
+    x = fkine(q)[0:3,3]
+
+    # acumulación de variables
+    xx.append(x.copy())
+    tt.append(t)
+
+    # Tiempo actual (necesario como indicador para ROS)
+    jstate.header.stamp = rospy.Time.now()
+
+    # ----------------------------
+    # Control dinamico (COMPLETAR)
+    # ----------------------------
+    
+    # error actual
+    e = qdes - q
+    print('error: ', np.round(np.linalg.norm(e), 3))
+
+    if (np.linalg.norm(e) < epsilon):
+     print('Error aceptable')
+     break
+
+    # vector de gravedad actual
+    rbdl.InverseDynamics(modelo, q, zeros, zeros, g)
+    # ley de control
+    u = Kp@e - Kd@dq + g 
+    
+    # Simulacion del robot
+    robot.send_command(u)
+
+    # Publicacion del mensaje
+    jstate.position = q
+    pub.publish(jstate)
+    bmarker_deseado.xyz(xdes)
+    bmarker_actual.xyz(x)
+    t = t+dt
+    # Esperar hasta la siguiente  iteracion
+    rate.sleep()
+
+  # gráficas
+  xx = np.array(xx)
+  tt = np.array(tt)
+
+  # Primera gráfica: Posiciones x vs tiempo
+  plt.figure()  # Crear nueva figura
+  plt.plot(tt, xx[:, 0], label='x')
+  plt.plot(tt, xdes[0] * np.ones(len(tt)), label='xd')
+  plt.xlabel('Tiempo (s)')
+  plt.ylabel('Posición x (m)')
+  plt.title('Posición en X vs Tiempo')
+  plt.legend()
+  plt.grid()
+
+  # Segunda gráfica: Posiciones y vs tiempo
+  plt.figure()  # Crear nueva figura
+  plt.plot(tt, xx[:, 1], label='y')
+  plt.plot(tt, xdes[1] * np.ones(len(tt)), label='yd')
+  plt.xlabel('Tiempo (s)')
+  plt.ylabel('Posición y (m)')
+  plt.title('Posición en Y vs Tiempo')
+  plt.legend()
+  plt.grid()
+
+  # Tercera gráfica: Posiciones z vs tiempo
+  plt.figure()  # Crear nueva figura
+  plt.plot(tt, xx[:, 2], label='z')
+  plt.plot(tt, xdes[2] * np.ones(len(tt)), label='zd')
+  plt.xlabel('Tiempo (s)')
+  plt.ylabel('Posición z (m)')
+  plt.title('Posición en Z vs Tiempo')
+  plt.legend()
+  plt.grid()
+
+  # Mostrar todas las gráficas
+  plt.show()
