@@ -28,11 +28,11 @@ if __name__ == '__main__':
   
   # =============================================================
   # Configuracion articular inicial (en radianes)
-  q = np.array([0.0, -1.0, 1.5, 0.0, -1.6, 1.0, 0.0,])
+  q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,])
   # Velocidad inicial
   dq = np.array([0., 0., 0., 0., 0., 0., 0.])
   # Configuracion articular deseada
-  qdes = np.array([1.0, -1.0, 1.0, 0.1, -1.5, 1.0, 1.0])
+  qdes = np.array([-1.24, 0.65, -1.43, 0.1, 0, -1.31, 0.01])
   # =============================================================
   
   # Posicion resultante de la configuracion articular deseada
@@ -47,29 +47,39 @@ if __name__ == '__main__':
   
   zeros = np.zeros(ndof)
   g = np.zeros(ndof)
+  M = np.zeros([ndof, ndof])
+  m = np.zeros(ndof)
+  c = np.zeros(ndof) 
+  eye = np.eye(ndof)
+  intgr_e = np.zeros(ndof)
   
   # Frecuencia del envio (en Hz)
-  freq = 20
-  dt = 1.0/freq
+  freq = 50
+  dt = 1.0 / freq
   rate = rospy.Rate(freq)
   
   # Simulador dinamico del robot
   robot = Robot(q, dq, ndof, dt)
 
   # Se definen las ganancias del controlador
-  Kp = 0.1
-  Kd = 0.1
-
-  Kp = Kp*np.eye(ndof)
-  Kd = Kd*np.eye(ndof)
+  Kp = 0.005*np.eye(ndof)
+  Kd = 0.002*np.eye(ndof)
+  Ki = 0.001*np.eye(ndof)
 
   # arrays para gráficas
   tt = []
   xx = []
+
+  # límites de las articulaciones
+  min_dq = np.array([-0.4, -0.4, -0.4, -0.5, -0.59, -0.59, -0.59])
+  max_dq = np.array([0.4, 0.4, 0.4, 0.5, 0.59, 0.59, 0.59])
+
+  min_q = np.array([-3.12, -1.73, -1.73, 0, -3.12, -1.81, -3.12])
+  max_q = np.array([3.12, 1.73, 1.73, 0.1, 3.12, 1.81, 3.12])
   
   # Bucle de ejecucion continua
   t = 0.0
-  epsilon = 1e-2
+  epsilon = 0.001
   print('INICIO DE BUCLE')
   while not rospy.is_shutdown():
 
@@ -80,6 +90,9 @@ if __name__ == '__main__':
     # Leer valores del simulador
     q  = robot.read_joint_positions()
     dq = robot.read_joint_velocities()
+    q = np.clip(q, min_q, max_q)
+    dq = np.clip(dq, min_dq, max_dq)
+
     # Posicion actual del efector final
     x = fkine(q)[0:3,3]
 
@@ -96,17 +109,29 @@ if __name__ == '__main__':
     
     # error actual
     e = qdes - q
-    print('error: ', np.round(np.linalg.norm(e), 3))
+    intgr_e += e*dt
+    print('error: ', np.round(np.linalg.norm(e), 2))
 
-    if (np.linalg.norm(e) < epsilon):
+    if (np.linalg.norm(e) <= epsilon):
      print('Error aceptable')
      break
 
     # vector de gravedad actual
     rbdl.InverseDynamics(modelo, q, zeros, zeros, g)
+    for i in range(ndof):
+     rbdl.InverseDynamics(modelo, q, zeros, eye[i,:], m)
+     m = m - g
+     M[i,:] = m
+    rbdl.InverseDynamics(modelo, q, dq, zeros, c)
+    c = c - g
+
+    #print('M:\n', np.round(M, 2))
+    #print('g: ', np.round(g, 2))
     # ley de control
-    u = Kp@e - Kd@dq + g 
-    
+    #u = Kp@e - Kd@dq + Ki @ intgr_e + g
+    u = M @ (Kp @ e - Kd @ dq) + c + g
+    u = np.clip(u, -2.75, 2.75)
+    #print('u: ', np.round(u, 2))
     # Simulacion del robot
     robot.send_command(u)
 
