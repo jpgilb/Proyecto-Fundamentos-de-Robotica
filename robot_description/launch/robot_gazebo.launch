@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <arg name="world_file" default="$(find robot_description)/worlds/gazebo4.world"/>
+
+  <!-- Lanzar Gazebo con el mundo especificado -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world_file)" />
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!-- Cargar la descripción del robot -->
+  <param name="robot_description"
+         textfile="$(find robot_description)/urdf/robot_description.urdf" />
+
+  <!-- Spawnear el robot -->
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false"
+      output="screen" args="-urdf -model robot -param robot_description -x 1.3 -y -0.5 -z 0.0 -R 0.0 -P 0.0 -Y 1.57" />
+
+
+</launch>

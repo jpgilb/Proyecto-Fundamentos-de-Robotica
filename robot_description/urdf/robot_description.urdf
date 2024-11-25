@@ -1,5 +1,6 @@
 <?xml version = "1.0"?>
 <robot name="edo">
+  <link name="world"/>
   <link name="base_link">
     <inertial>
       <origin xyz="0.0617583602130883 0.437262464550775 -0.00395442197852672" rpy="0 0 0" />
@@ -36,6 +37,12 @@
       </geometry>
     </collision>
   </link>
+
+  <joint name="base_to_world" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
   
   <link
     name="link_1">
@@ -419,5 +426,82 @@
       xyz="0 -1 0" />
     <limit lower="-3.12" upper="3.12" effort="2.75" velocity="0.59" />
   </joint>
+
+  <!-- Transmisión -->
+  <transmission name="trasmision1">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_1">
+     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor1">
+     <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="trasmision2">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_2">
+     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor2">
+     <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="trasmision3">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_3">
+     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor3">
+     <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+    <transmission name="trasmision4">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="prismatic_joint">
+     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor4">
+     <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+    <transmission name="trasmision5">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_4">
+     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor5">
+     <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+    <transmission name="trasmision6">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_5">
+     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor6">
+     <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+    <transmission name="trasmision7">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_6">
+     <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor7">
+     <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+     <robotNamespace>/robot</robotNamespace>
+    </plugin>
+  </gazebo>
 
 </robot>

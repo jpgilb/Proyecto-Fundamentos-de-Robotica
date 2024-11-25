@@ -47,7 +47,6 @@ def fkine(q):
  T3 = dh(0.0,      pi/2+q[2],  0.0,    pi/2)
  T4 = dh(q[3],     0.0,        0.0,    0.0)
  T5 = dh(0.4263,   pi+q[4],    0.0,    pi/2)
-
  T6 = dh(0.0,      pi+q[5],    0.0,    pi/2)
  T7 = dh(0.1636,   q[6],       0.0,    0.0)
  T = T1 @ T2 @ T3 @ T4 @ T5 @ T6 @ T7
@@ -132,3 +131,38 @@ def dpinv(J, damp = 0.01):
  I = np.eye(JJ_T.shape[0])
  J_dpinv = JT @ np.linalg.inv(JJ_T + (damp**2) * I)
  return J_dpinv
+
+def penalty(q, qmin, qmax, w=1e-3):
+    viol = np.maximum(0, q - qmax) + np.maximum(0, qmin - q)
+    pen = w * np.sum(viol**2)  # penalidad cuadrada
+    return pen
+
+def ikine(xdes, q0, epsilon=0.001, max_iter=1000, delta=0.1):
+ # límites articulares
+ qmin = np.array([-3.12, -1.73, -1.73, 0, -3.12, -1.81, -3.12])
+ qmax = np.array([3.12, 1.73, 1.73, 0.1, 3.12, 1.81, 3.12])
+ q  = copy(q0)
+ for i in range(max_iter):
+  # Posición actual
+  xact = fkine(q)
+  xact = xact[0:3, 3]
+
+  # Jacobiano
+  J = jacobian(q, delta)
+  # Error
+  e = xdes - xact
+  # calcular penalidad
+  pen = penalty(q, qmin, qmax)
+  # Error total
+  e += pen
+  # q nuevo
+  q = q + np.linalg.pinv(J) @ e
+  q = np.clip(q, qmin, qmax)
+
+  # Break
+  if (np.linalg.norm(e) < epsilon):
+    break
+
+  pass
+    
+ return q
