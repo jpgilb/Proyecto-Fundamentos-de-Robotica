@@ -22,7 +22,7 @@ if __name__ == '__main__':
               'joint_5', 'joint_6']
 
     # Desired position
-    xd = np.array([0.5, 0.125, 0.249])
+    xd = np.array([0.5, -0.5, 0.5])
     # Initial configuration
     q0 = np.array([0.0, -1.0, 1.7, 0.0, -2.2, -1.6, 0.2])
     # Inverse kinematics

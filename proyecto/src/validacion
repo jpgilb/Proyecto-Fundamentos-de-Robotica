@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+import rospy
+import numpy as np
+from std_msgs.msg import Float64
+from sensor_msgs.msg import JointState
+import rbdl
+from prfuncs import fkine
+
+# Variables globales para almacenar estados articulares
+q = None
+dq = None
+joint_names = ['joint_1', 'joint_2', 'joint_3', 'prismatic_joint', 'joint_4', 'joint_5', 'joint_6']
+
+def joint_states_callback(msg):
+    """
+    Callback para actualizar las posiciones y velocidades articulares desde Gazebo.
+    """
+    global q, dq
+    indices = [msg.name.index(joint) for joint in joint_names]
+    q = np.array([msg.position[i] for i in indices])
+    dq = np.array([msg.velocity[i] for i in indices])
+
+if __name__ == '__main__':
+    rospy.init_node("dynamic_control_gazebo", disable_signals=True)
+
+    # Modelo RBDL
+    modelo = rbdl.loadModel('/home/user/proy_ws/src/robot_description/urdf/robot_description.urdf')
+    ndof = modelo.q_size  # Grados de libertad
+
+    zeros = np.zeros(ndof)
+    gr = np.zeros(ndof)
+    M = np.zeros([ndof, ndof])
+    m = np.zeros(ndof)
+    c = np.zeros(ndof)
+    eye = np.eye(ndof)
+
+    # Suscribirse a los estados articulares del robot
+    rospy.Subscriber("/robot/joint_states", JointState, joint_states_callback)
+
+    # Configuración deseada
+    qdes = np.array([0.597, 0.391, 1.28, 0.1, -1.248, -1.018, 0.2])
+
+    # Frecuencia de funcionamiento
+    freq = 50  # Hz
+    dt = 1 / freq
+
+    # Controladores de torque para cada articulación
+    publishers = [
+        rospy.Publisher(f"/robot/{joint}_effort_controller/command", Float64, queue_size=10)
+        for joint in joint_names
+    ]
+
+    # Ganancias del controlador
+    Kp = 5 * np.eye(ndof)
+    Kd = 2 * np.eye(ndof)
+
+    rate = rospy.Rate(freq)
+    print("Control dinámico iniciado")
+
+    while not rospy.is_shutdown():
+        if q is None or dq is None:
+            # Esperar hasta que se reciban datos de /robot/joint_states
+            rospy.sleep(0.1)
+            continue
+
+        # Error actual
+        e = qdes - q
+        print('Error: ', np.round(np.linalg.norm(e), 4))
+
+        # Cálculo de la dinámica del modelo
+        rbdl.InverseDynamics(modelo, q, zeros, zeros, gr)
+        for i in range(ndof):
+            rbdl.InverseDynamics(modelo, q, zeros, eye[i, :], m)
+            m = m - gr
+            M[i, :] = m
+        rbdl.InverseDynamics(modelo, q, dq, zeros, c)
+        c = c - gr
+
+        # Ley de control
+        u = (M @ (Kp @ e - Kd @ dq) + c + gr)
+
+        # Publicar los torques en cada controlador
+        for i, pub in enumerate(publishers):
+            pub.publish(Float64(u[i]))
+
+        # Criterio de parada
+        #if np.linalg.norm(e) < 0.01:
+            #print("Objetivo alcanzado")
+            #break
+
+        rate.sleep()
+
+    print("Control terminado")

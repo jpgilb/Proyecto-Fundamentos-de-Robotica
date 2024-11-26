@@ -1,10 +1,10 @@
 robot:
-  # Publicar los estados de las articulaciones --------------------------
+  # Publicar los estados de las articulaciones
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
 
-  # Controladores de trayectoria ----------------------------------------
+  # Controlador de trayectoria basado en esfuerzo (mantener para compatibilidad)
   joint_trajectory_controller:
     type: effort_controllers/JointTrajectoryController
     joints:
@@ -35,3 +35,26 @@ robot:
       joint_6: {trajectory: 0.05, goal: 0.02}
     state_publish_rate: 50
     action_monitor_rate: 10
+
+  # Controladores de esfuerzo individuales
+  joint_1_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: joint_1
+  joint_2_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: joint_2
+  joint_3_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: joint_3
+  prismatic_joint_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: prismatic_joint
+  joint_4_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: joint_4
+  joint_5_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: joint_5
+  joint_6_effort_controller:
+    type: effort_controllers/JointEffortController
+    joint: joint_6

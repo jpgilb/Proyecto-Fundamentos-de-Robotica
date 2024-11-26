@@ -64,7 +64,6 @@ if __name__ == '__main__':
   # Se definen las ganancias del controlador
   Kp = 0.005*np.eye(ndof)
   Kd = 0.002*np.eye(ndof)
-  Ki = 0.001*np.eye(ndof)
 
   # arrays para gráficas
   tt = []
@@ -82,10 +81,6 @@ if __name__ == '__main__':
   epsilon = 0.001
   print('INICIO DE BUCLE')
   while not rospy.is_shutdown():
-
-    #if (t > 40):
-     #print('Límite de tiempo alcanzado')
-     #break
   
     # Leer valores del simulador
     q  = robot.read_joint_positions()
@@ -128,7 +123,6 @@ if __name__ == '__main__':
     #print('M:\n', np.round(M, 2))
     #print('g: ', np.round(g, 2))
     # ley de control
-    #u = Kp@e - Kd@dq + Ki @ intgr_e + g
     u = M @ (Kp @ e - Kd @ dq) + c + g
     u = np.clip(u, -2.75, 2.75)
     #print('u: ', np.round(u, 2))
