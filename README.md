@@ -37,6 +37,11 @@ Se definió la cinemática directa del modelo con la convención de Denavit-Hart
 ### Terminal 2 (para ejecutar script)
 `rosrun proyecto <ejecutable>`
 
+## Dependencias necesarias
+- NumPy
+- MatPlotLib
+- RBDL (se eliminó del repositorio en el último commit. Es necesario que cada usuario clone el paquete en su propio workspace por su cuenta. Podría ocasionar errores relaciones a RBDL).
+
 ## Listado de archivos
 ```
 proyecto/
