@@ -40,7 +40,7 @@ Se definió la cinemática directa del modelo con la convención de Denavit-Hart
 ## Dependencias necesarias
 - NumPy
 - MatPlotLib
-- RBDL (se eliminó del repositorio en el último commit. Es necesario que cada usuario clone el paquete en su propio workspace por su cuenta. Podría ocasionar errores relaciones a RBDL).
+- RBDL (no se cargan los archivos del paquete a este repositorio. Es necesario que cada usuario clone el paquete en su propio workspace por su cuenta. Podría ocasionar errores relaciones a RBDL).
 
 ## Listado de archivos
 ```
