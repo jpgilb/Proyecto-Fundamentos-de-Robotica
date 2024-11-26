@@ -20,18 +20,18 @@ Se definió la cinemática directa del modelo con la convención de Denavit-Hart
        ├──> joint_5 (Rotación)
        │
        └──> joint_6 (Rotación)
-             └── Fin (Herramienta o efector final)
+             └── Gripper (Efector final)
 
 ```
 ## Ejecución
 ### Terminal 1 (para lanzar el entorno)
-### RViz
+#### RViz
 `roslaunch robot_description display.launch`
-### RViz (con sliders)
+#### RViz (con sliders)
 `roslaunch robot_description display_sliders.launch`
-### Gazebo (control de trayectoria)
+#### Gazebo (control de trayectoria)
 `roslaunch robot_description robot_gazebo_control.launch`
-### Gazebo (control de esfuerzos)
+#### Gazebo (control de esfuerzos)
 `roslaunch robot_description robot_gazebo_control_effort.launch`
 
 ### Terminal 2 (para ejecutar script)
